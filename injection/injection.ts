@@ -18,16 +18,35 @@ function on(event: string, listener: (payload: any, sendMessage: (response: any)
 }
 
 let listening = false
+let autoReadOn = false
+let autoSendOn = false
 
 on('listen', (bool) => {
   listening = bool
   console.log('Listening:', bool)
 })
 
-on('send', () => {
+on('auto-send', (autoSend) => {
+  autoSendOn = autoSend
+  console.log('Auto-sending:', autoSend)
+})
+
+on('send', (autoRead) => {
+  autoReadOn = autoRead
   console.log('Sending prompt...')
   const button = document.querySelector('button[data-testid="send-button"]') as HTMLButtonElement | null
   if (button) button.click()
+  if (!autoRead) return
+  setTimeout(() => {
+    const i = setInterval(() => {
+      const badButton = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
+      if (badButton) return
+      clearInterval(i)
+      setTimeout(() => {
+        chrome.runtime.sendMessage({ event: 'read', payload: null })
+      }, 100)
+    }, 100)
+  }, 1500)
 })
 
 on('read', () => {
@@ -73,6 +92,9 @@ if (SpeechRecognition) {
         textarea.value = textarea.value.trim() + ' ' + transcript.trim()
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
+        }, 10)
       }
     } else {
       if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
@@ -91,7 +113,7 @@ if (SpeechRecognition) {
         })
       } else if (transcript.toLowerCase().includes('send')) {
         setTimeout(() => {
-          chrome.runtime.sendMessage({ event: 'send', payload: null })
+          chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
         })
       }
     }

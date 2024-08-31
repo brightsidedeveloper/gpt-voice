@@ -4,27 +4,27 @@ import { ThemeToggle } from './components/ui/ThemeToggle'
 import { tw, wetToast } from 'bsdweb'
 import send, { on } from './api/send'
 import { Button } from './components/ui/shadcn/ui/button'
+import { Label } from './components/ui/shadcn/ui/label'
+import { Switch } from './components/ui/shadcn/ui/switch'
 
 export default function App() {
-  const [transcript, setTranscript] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [autoReadOn, setAutoReadOn] = useState(false)
+  const [autoSendOn, setAutoSendOn] = useState(false)
 
   const handleButtonClick = async () => {
     send('listen', !isListening)
     setIsListening(!isListening)
   }
 
+  useEffect(() => {
+    send('auto-send', autoSendOn)
+  }, [autoSendOn])
+
   const sendMessage = () => send('send', null)
 
-  useEffect(
-    () =>
-      on('speech-result', (payload) => {
-        if (payload.toLowerCase().includes('read') || payload.toLowerCase().includes('GPT') || payload.toLowerCase().includes('send'))
-          return
-        setTranscript(payload)
-      }),
-    []
-  )
+  useEffect(() => on('speech-result', (payload) => console.log(payload)), [])
+
   useEffect(
     () =>
       on('read', () => {
@@ -39,17 +39,15 @@ export default function App() {
     () =>
       on('send', () => {
         wetToast('Sending Prompt', { icon: '📤' })
-        send('send', null)
-        setTranscript('')
+        send('send', autoReadOn)
       }),
-    []
+    [autoReadOn]
   )
   useEffect(
     () =>
       on('okay', () => {
         wetToast('Listening', { icon: '🎤' })
         send('listen', true)
-        setTranscript('...')
         setIsListening(true)
       }),
     []
@@ -58,7 +56,6 @@ export default function App() {
     () =>
       on('nevermind', () => {
         wetToast('Nevermind', { icon: '👌' })
-        setTranscript('')
         setIsListening(false)
         send('listen', false)
       }),
@@ -79,11 +76,19 @@ export default function App() {
           </div>
         </div>
       </header>
-      <div className="p-10 w-full flex justify-center items-center flex-col gap-4 @container">
+      <div className="p-10 pt-5 w-full flex justify-center items-center flex-col gap-4 @container">
+        <div className="flex justify-end items-center gap-2">
+          <Label>Auto Send:</Label>
+          <Switch checked={autoSendOn} onCheckedChange={() => setAutoSendOn((curr) => !curr)} />
+        </div>
+        <div className="flex justify-end items-center gap-2">
+          <Label>Auto Read:</Label>
+          <Switch checked={autoReadOn} onCheckedChange={() => setAutoReadOn((curr) => !curr)} />
+        </div>
         <button
           onClick={handleButtonClick}
           className={tw(
-            'p-8 rounded-full border transition-colors duration-300 shadow-md dark:shadow-xl w-full aspect-square',
+            'my-2 p-8 rounded-full border transition-colors duration-300 shadow-md dark:shadow-xl w-full aspect-square',
             isListening ? 'bg-red-500' : 'bg-primary'
           )}
         ></button>
@@ -91,8 +96,6 @@ export default function App() {
           <Button onClick={sendMessage}>Send</Button>
           <Button onClick={() => send('read', null)}>Read</Button>
         </div>
-        <br />
-        <p className="max-w-[280px] truncate text-center">{transcript}</p>
       </div>
       <a
         href="https://brightsidedevelopers.com"
