@@ -28,7 +28,7 @@ function on(event: string, listener: (payload: any, sendMessage: (response: any)
 }
 
 let listening = false
-let autoReadOn = false
+let autoSpeakOn = false
 let autoSendOn = false
 let autoListenOn = false
 
@@ -55,7 +55,7 @@ recognition.onend = () => {
 }
 
 const debouncedSendMessage = debounce(() => {
-  chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
+  chrome.runtime.sendMessage({ event: 'send', payload: autoSpeakOn })
 }, 300)
 
 // Handle recognition results
@@ -67,14 +67,16 @@ recognition.onresult = (event) => {
   const transcript = event.results[lastIndex][0].transcript
   console.log('Transcript:', transcript)
   // Send the recognized text to the background or popup
-  const commands = ['send', 'read', 'listen', 'nevermind', 'never mind', 'stop']
+  const commands = ['send', 'speak', 'listen', 'nevermind', 'never mind', 'stop']
   const compoundCommands = [
-    ['turn', 'read', 'on'],
-    ['turn', 'read', 'off'],
+    ['turn', 'speak', 'on'],
+    ['turn', 'speak', 'off'],
     ['turn', 'send', 'on'],
     ['turn', 'send', 'off'],
     ['turn', 'listen', 'on'],
     ['turn', 'listen', 'off'],
+    ['turn', 'commands', 'on'],
+    ['turn', 'commands', 'off'],
   ]
 
   if (
@@ -88,13 +90,7 @@ recognition.onresult = (event) => {
     const compound = compoundCommands.find((compound) => compound.every((part) => transcript.toLowerCase().includes(part)))
     if (compound) {
       const [_, command, on] = compound
-      if (command === 'read') {
-        chrome.runtime.sendMessage({ event: 'turn-auto-read', payload: on === 'on' })
-      } else if (command === 'send') {
-        chrome.runtime.sendMessage({ event: 'turn-auto-send', payload: on === 'on' })
-      } else if (command === 'listen') {
-        chrome.runtime.sendMessage({ event: 'turn-auto-listen', payload: on === 'on' })
-      }
+      chrome.runtime.sendMessage({ event: `turn-auto-${command}`, payload: on === 'on' })
     } else if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
       chrome.runtime.sendMessage({ event: 'nevermind', payload: null })
       const textarea = document.getElementById('prompt-textarea') as HTMLTextAreaElement | null
@@ -103,21 +99,26 @@ recognition.onresult = (event) => {
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
       }
-    } else if (transcript.toLowerCase().includes('listen')) {
-      chrome.runtime.sendMessage({ event: 'okay', payload: null })
-    } else if (transcript.toLowerCase().includes('read')) {
-      setTimeout(() => {
-        chrome.runtime.sendMessage({ event: 'read', payload: null })
-      })
-    } else if (transcript.toLowerCase().includes('send')) {
-      setTimeout(() => {
-        chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
-      })
-    } else if (transcript.toLowerCase().includes('stop')) {
-      const button = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
-      const button2 = document.querySelector('button[aria-label="Stop"]') as HTMLButtonElement | null
-      if (button) button.click()
-      if (button2) button2.click()
+    } else {
+      if (transcript.toLowerCase().includes('listen')) {
+        chrome.runtime.sendMessage({ event: 'okay', payload: null })
+      }
+      if (transcript.toLowerCase().includes('speak')) {
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ event: 'speak', payload: null })
+        })
+      }
+      if (transcript.toLowerCase().includes('send')) {
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ event: 'send', payload: autoSpeakOn })
+        })
+      }
+      if (transcript.toLowerCase().includes('stop')) {
+        const button = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
+        const button2 = document.querySelector('button[aria-label="Stop"]') as HTMLButtonElement | null
+        if (button) button.click()
+        if (button2) button2.click()
+      }
     }
   }
 }
@@ -131,18 +132,18 @@ recognition.onerror = (event) => {
 // Trigger recognition
 startRecognition()
 
-console.log('Injection script loaded!')
-
-function read() {
+function speak() {
   const btns = Array.from(document.querySelectorAll('button[aria-label="Read Aloud"]')) as HTMLButtonElement[]
   const button = btns[btns.length - 1]
   if (button) button.click()
-  reading = true
+  speaking = true
+  chrome.runtime.sendMessage({ event: 'speaking', payload: true })
   setTimeout(() => {
     const i = setInterval(() => {
       const badButton = document.querySelector('button[aria-label="Stop"]') as HTMLButtonElement | null
       if (badButton) return
-      reading = false
+      speaking = false
+      chrome.runtime.sendMessage({ event: 'speaking', payload: false })
       clearInterval(i)
       if (autoListenOn) {
         recognition.abort()
@@ -172,30 +173,30 @@ on('auto-send', (autoSend) => {
 function send() {
   const button = document.querySelector('button[data-testid="send-button"]') as HTMLButtonElement | null
   if (button) button.click()
-  if (!autoReadOn) return
+  if (!autoSpeakOn) return
   setTimeout(() => {
     const i = setInterval(() => {
       const badButton = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
       if (badButton) return
       clearInterval(i)
       setTimeout(() => {
-        chrome.runtime.sendMessage({ event: 'read', payload: null })
+        chrome.runtime.sendMessage({ event: 'speak', payload: null })
       }, 100)
     }, 100)
   }, 1500)
 }
 
-on('send', (autoRead) => {
-  autoReadOn = autoRead
+on('send', (autoSpeak) => {
+  autoSpeakOn = autoSpeak
   console.log('Sending prompt...')
   send()
 })
 
-let reading = false
+let speaking = false
 
-on('read', () => {
-  console.log('Reading prompt...')
-  read()
+on('speak', () => {
+  console.log('Speaking response...')
+  speak()
 })
 
 function appendTextArea(text: string) {

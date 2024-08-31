@@ -3,7 +3,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar'
 import { ThemeToggle } from './components/ui/ThemeToggle'
 import { tw, wetToast } from 'bsdweb'
 import send, { on } from './api/send'
-import { Button } from './components/ui/shadcn/ui/button'
 import { Label } from './components/ui/shadcn/ui/label'
 import { Switch } from './components/ui/shadcn/ui/switch'
 import { atomWithStorage } from 'jotai/utils'
@@ -22,20 +21,18 @@ type Events = {
 }
 const realtime = new BrightBaseRealtime<Events>('chrome-gpt-fire')
 
-const autoReadAtom = atomWithStorage('auto-read', false)
+const autoSpeakAtom = atomWithStorage('auto-speak', false)
 const autoSendAtom = atomWithStorage('auto-send', false)
 const autoListenAtom = atomWithStorage('auto-listen', false)
+const showInstructionsAtom = atomWithStorage('show-instructions', false)
 
 export default function App() {
   const [isListening, setIsListening] = useState(false)
-  const [autoReadOn, setAutoReadOn] = useAtom(autoReadAtom)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [autoSpeakOn, setAutoSpeakOn] = useAtom(autoSpeakAtom)
   const [autoSendOn, setAutoSendOn] = useAtom(autoSendAtom)
   const [autoListenOn, setAutoListenOn] = useAtom(autoListenAtom)
-
-  const handleButtonClick = async () => {
-    send('listen', !isListening)
-    setIsListening(!isListening)
-  }
+  const [showInstructions, setShowInstructions] = useAtom(showInstructionsAtom)
 
   useEffect(() => realtime.subscribe(), [])
   useEffect(() => realtime.on('send-files', (payload) => send('send-files', payload)), [])
@@ -48,24 +45,20 @@ export default function App() {
     send('auto-listen', autoListenOn)
   }, [autoListenOn])
 
-  const sendMessage = () => {
-    setIsListening(false)
-    send('send', autoReadOn)
-  }
-
-  useEffect(() => on('turn-auto-read', (payload) => setAutoReadOn(payload)), [setAutoReadOn])
+  useEffect(() => on('turn-auto-speak', (payload) => setAutoSpeakOn(payload)), [setAutoSpeakOn])
   useEffect(() => on('turn-auto-send', (payload) => setAutoSendOn(payload)), [setAutoSendOn])
   useEffect(() => on('turn-auto-listen', (payload) => setAutoListenOn(payload)), [setAutoListenOn])
+  useEffect(() => on('turn-auto-commands', (payload) => setShowInstructions(payload)), [setShowInstructions])
 
   useEffect(() => on('speech-result', (payload) => console.log(payload)), [])
 
   useEffect(
     () =>
-      on('read', () => {
-        wetToast('Reading Prompt', { icon: '📖' })
+      on('speak', () => {
+        wetToast('Speaking Prompt', { icon: '📖' })
         setIsListening(false)
         send('listen', false)
-        send('read', null)
+        send('speak', null)
       }),
     []
   )
@@ -73,11 +66,11 @@ export default function App() {
     () =>
       on('send', () => {
         wetToast('Sending Prompt', { icon: '📤' })
-        send('send', autoReadOn)
+        send('send', autoSpeakOn)
         setIsListening(false)
         send('listen', false)
       }),
-    [autoReadOn]
+    [autoSpeakOn]
   )
   useEffect(
     () =>
@@ -98,8 +91,16 @@ export default function App() {
     []
   )
 
+  useEffect(
+    () =>
+      on('speaking', (payload) => {
+        setIsSpeaking(payload)
+      }),
+    []
+  )
+
   return (
-    <div className="min-w-[300px] min-h-[475px] size-full">
+    <div className={tw('max-h-[250px] size-full transition-all duration-500', showInstructions ? 'min-w-[550px]' : 'min-w-[280px]')}>
       <header className="h-12 border-b shadow-sm flex items-center justify-center">
         <div className="px-2 flex items-center justify-between w-full [max-width:1920px]">
           <span className="font-semibold text-xl">GPT Voice Mode</span>
@@ -112,32 +113,67 @@ export default function App() {
           </div>
         </div>
       </header>
-      <div className="p-10 pt-5 w-full flex justify-center items-center flex-col gap-4 @container">
-        <div className="w-[170px] flex justify-center items-center flex-col gap-1.5">
-          <div className="w-full flex justify-between items-center gap-2">
+      <div className="p-6 w-full flex justify-between items-center gap-4 @container">
+        <div className="w-[200px] flex justify-center items-center flex-col gap-3">
+          <div
+            className={tw(
+              'flex justify-between items-center gap-2 transition-all duration-500',
+              showInstructions ? 'min-w-full' : 'min-w-[105%] translate-x-[8px]'
+            )}
+          >
             <Label>Auto Send:</Label>
             <Switch checked={autoSendOn} onCheckedChange={() => setAutoSendOn((curr) => !curr)} />
           </div>
-          <div className="w-full flex justify-between items-center gap-2">
-            <Label>Auto Read:</Label>
-            <Switch checked={autoReadOn} onCheckedChange={() => setAutoReadOn((curr) => !curr)} />
+          <div
+            className={tw(
+              'flex justify-between items-center gap-2 transition-all duration-500',
+              showInstructions ? 'min-w-full' : 'min-w-[105%] translate-x-[8px]'
+            )}
+          >
+            <Label>Auto Speak:</Label>
+            <Switch checked={autoSpeakOn} onCheckedChange={() => setAutoSpeakOn((curr) => !curr)} />
           </div>
-          <div className="w-full flex justify-between items-center gap-2">
+          <div
+            className={tw(
+              'flex justify-between items-center gap-2 transition-all duration-500',
+              showInstructions ? 'min-w-full' : 'min-w-[105%] translate-x-[8px]'
+            )}
+          >
             <Label>Auto Listen:</Label>
             <Switch checked={autoListenOn} onCheckedChange={() => setAutoListenOn((curr) => !curr)} />
           </div>
+          <div
+            className={tw(
+              'flex justify-between items-center gap-2 transition-all duration-500',
+              showInstructions ? 'min-w-full' : 'min-w-[105%] translate-x-[8px]'
+            )}
+          >
+            <Label>Commands:</Label>
+            <Switch checked={showInstructions} onCheckedChange={() => setShowInstructions((curr) => !curr)} />
+          </div>
         </div>
-        <button
-          onClick={handleButtonClick}
+        <div
           className={tw(
-            'my-2 p-8 rounded-full border transition-colors duration-300 shadow-md dark:shadow-xl w-full aspect-square',
-            isListening ? 'bg-red-500' : 'bg-primary'
+            'flex justify-center flex-col gap-1.5 w-full text-left transition-all duration-500 overflow-hidden [&_p]:whitespace-nowrap translate-x-[8px]',
+            showInstructions ? 'max-w-[250px]' : 'max-w-0'
           )}
-        ></button>
-        <div className="flex gap-4 item-center">
-          <Button onClick={sendMessage}>Send</Button>
-          <Button onClick={() => send('read', null)}>Read</Button>
+        >
+          <p>"Turn [on/off] [send/speak/listen/commands]"</p>
+          <p>"Speak" - Will speak the last response</p>
+          <p>"Listen" - Will activate auto type</p>
+          <p>"Nevermind" - Will clear and stop listening</p>
+          <p>"Stop" - Stops generating or speech</p>
         </div>
+      </div>
+      <div className="w-full flex justify-center items-center">
+        <p
+          className={tw(
+            'text-lg transition-colors',
+            isSpeaking ? 'animate-bounce text-fuchsia-500' : isListening ? 'text-green-500 animate-pulse' : 'text-amber-500'
+          )}
+        >
+          {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'On Standby'}
+        </p>
       </div>
       <a
         href="https://brightsidedevelopers.com"

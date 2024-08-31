@@ -7,6 +7,15 @@
     "default_popup": "index.html",
     "default_icon": "icon.png"
   },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "MacCtrl+Shift+X"
+      },
+      "description": "Open the extension"
+    }
+  },
   "permissions": ["activeTab", "scripting", "tabs", "storage"],
   "content_scripts": [
     {

@@ -19,7 +19,7 @@ function on(event, listener) {
     return () => delete listeners[event];
 }
 let listening = false;
-let autoReadOn = false;
+let autoSpeakOn = false;
 let autoSendOn = false;
 let autoListenOn = false;
 // Check if the browser supports SpeechRecognition
@@ -40,7 +40,7 @@ recognition.onend = () => {
     startRecognition();
 };
 const debouncedSendMessage = debounce(() => {
-    chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn });
+    chrome.runtime.sendMessage({ event: 'send', payload: autoSpeakOn });
 }, 300);
 // Handle recognition results
 // @ts-ignore
@@ -50,14 +50,16 @@ recognition.onresult = (event) => {
     const transcript = event.results[lastIndex][0].transcript;
     console.log('Transcript:', transcript);
     // Send the recognized text to the background or popup
-    const commands = ['send', 'read', 'listen', 'nevermind', 'never mind', 'stop'];
+    const commands = ['send', 'speak', 'listen', 'nevermind', 'never mind', 'stop'];
     const compoundCommands = [
-        ['turn', 'read', 'on'],
-        ['turn', 'read', 'off'],
+        ['turn', 'speak', 'on'],
+        ['turn', 'speak', 'off'],
         ['turn', 'send', 'on'],
         ['turn', 'send', 'off'],
         ['turn', 'listen', 'on'],
         ['turn', 'listen', 'off'],
+        ['turn', 'commands', 'on'],
+        ['turn', 'commands', 'off'],
     ];
     if (listening &&
         !commands.some((command) => transcript.toLowerCase().includes(command.toLowerCase())) &&
@@ -69,15 +71,7 @@ recognition.onresult = (event) => {
         const compound = compoundCommands.find((compound) => compound.every((part) => transcript.toLowerCase().includes(part)));
         if (compound) {
             const [_, command, on] = compound;
-            if (command === 'read') {
-                chrome.runtime.sendMessage({ event: 'turn-auto-read', payload: on === 'on' });
-            }
-            else if (command === 'send') {
-                chrome.runtime.sendMessage({ event: 'turn-auto-send', payload: on === 'on' });
-            }
-            else if (command === 'listen') {
-                chrome.runtime.sendMessage({ event: 'turn-auto-listen', payload: on === 'on' });
-            }
+            chrome.runtime.sendMessage({ event: `turn-auto-${command}`, payload: on === 'on' });
         }
         else if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
             chrome.runtime.sendMessage({ event: 'nevermind', payload: null });
@@ -88,26 +82,28 @@ recognition.onresult = (event) => {
                 textarea.dispatchEvent(event);
             }
         }
-        else if (transcript.toLowerCase().includes('listen')) {
-            chrome.runtime.sendMessage({ event: 'okay', payload: null });
-        }
-        else if (transcript.toLowerCase().includes('read')) {
-            setTimeout(() => {
-                chrome.runtime.sendMessage({ event: 'read', payload: null });
-            });
-        }
-        else if (transcript.toLowerCase().includes('send')) {
-            setTimeout(() => {
-                chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn });
-            });
-        }
-        else if (transcript.toLowerCase().includes('stop')) {
-            const button = document.querySelector('button[aria-label="Stop streaming"]');
-            const button2 = document.querySelector('button[aria-label="Stop"]');
-            if (button)
-                button.click();
-            if (button2)
-                button2.click();
+        else {
+            if (transcript.toLowerCase().includes('listen')) {
+                chrome.runtime.sendMessage({ event: 'okay', payload: null });
+            }
+            if (transcript.toLowerCase().includes('speak')) {
+                setTimeout(() => {
+                    chrome.runtime.sendMessage({ event: 'speak', payload: null });
+                });
+            }
+            if (transcript.toLowerCase().includes('send')) {
+                setTimeout(() => {
+                    chrome.runtime.sendMessage({ event: 'send', payload: autoSpeakOn });
+                });
+            }
+            if (transcript.toLowerCase().includes('stop')) {
+                const button = document.querySelector('button[aria-label="Stop streaming"]');
+                const button2 = document.querySelector('button[aria-label="Stop"]');
+                if (button)
+                    button.click();
+                if (button2)
+                    button2.click();
+            }
         }
     }
 };
@@ -119,19 +115,20 @@ recognition.onerror = (event) => {
 };
 // Trigger recognition
 startRecognition();
-console.log('Injection script loaded!');
-function read() {
+function speak() {
     const btns = Array.from(document.querySelectorAll('button[aria-label="Read Aloud"]'));
     const button = btns[btns.length - 1];
     if (button)
         button.click();
-    reading = true;
+    speaking = true;
+    chrome.runtime.sendMessage({ event: 'speaking', payload: true });
     setTimeout(() => {
         const i = setInterval(() => {
             const badButton = document.querySelector('button[aria-label="Stop"]');
             if (badButton)
                 return;
-            reading = false;
+            speaking = false;
+            chrome.runtime.sendMessage({ event: 'speaking', payload: false });
             clearInterval(i);
             if (autoListenOn) {
                 recognition.abort();
@@ -158,7 +155,7 @@ function send() {
     const button = document.querySelector('button[data-testid="send-button"]');
     if (button)
         button.click();
-    if (!autoReadOn)
+    if (!autoSpeakOn)
         return;
     setTimeout(() => {
         const i = setInterval(() => {
@@ -167,20 +164,20 @@ function send() {
                 return;
             clearInterval(i);
             setTimeout(() => {
-                chrome.runtime.sendMessage({ event: 'read', payload: null });
+                chrome.runtime.sendMessage({ event: 'speak', payload: null });
             }, 100);
         }, 100);
     }, 1500);
 }
-on('send', (autoRead) => {
-    autoReadOn = autoRead;
+on('send', (autoSpeak) => {
+    autoSpeakOn = autoSpeak;
     console.log('Sending prompt...');
     send();
 });
-let reading = false;
-on('read', () => {
-    console.log('Reading prompt...');
-    read();
+let speaking = false;
+on('speak', () => {
+    console.log('Speaking response...');
+    speak();
 });
 function appendTextArea(text) {
     const textarea = document.getElementById('prompt-textarea');
