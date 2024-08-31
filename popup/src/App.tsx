@@ -11,11 +11,13 @@ import { useAtom } from 'jotai/react'
 
 const autoReadAtom = atomWithStorage('auto-read', false)
 const autoSendAtom = atomWithStorage('auto-send', false)
+const autoListenAtom = atomWithStorage('auto-listen', false)
 
 export default function App() {
   const [isListening, setIsListening] = useState(false)
   const [autoReadOn, setAutoReadOn] = useAtom(autoReadAtom)
   const [autoSendOn, setAutoSendOn] = useAtom(autoSendAtom)
+  const [autoListenOn, setAutoListenOn] = useAtom(autoListenAtom)
 
   const handleButtonClick = async () => {
     send('listen', !isListening)
@@ -26,10 +28,18 @@ export default function App() {
     send('auto-send', autoSendOn)
   }, [autoSendOn])
 
+  useEffect(() => {
+    send('auto-listen', autoListenOn)
+  }, [autoListenOn])
+
   const sendMessage = () => {
     setIsListening(false)
     send('send', autoReadOn)
   }
+
+  useEffect(() => on('turn-auto-read', (payload) => setAutoReadOn(payload)), [setAutoReadOn])
+  useEffect(() => on('turn-auto-send', (payload) => setAutoSendOn(payload)), [setAutoSendOn])
+  useEffect(() => on('turn-auto-listen', (payload) => setAutoListenOn(payload)), [setAutoListenOn])
 
   useEffect(() => on('speech-result', (payload) => console.log(payload)), [])
 
@@ -87,13 +97,19 @@ export default function App() {
         </div>
       </header>
       <div className="p-10 pt-5 w-full flex justify-center items-center flex-col gap-4 @container">
-        <div className="flex justify-end items-center gap-2">
-          <Label>Auto Send:</Label>
-          <Switch checked={autoSendOn} onCheckedChange={() => setAutoSendOn((curr) => !curr)} />
-        </div>
-        <div className="flex justify-end items-center gap-2">
-          <Label>Auto Read:</Label>
-          <Switch checked={autoReadOn} onCheckedChange={() => setAutoReadOn((curr) => !curr)} />
+        <div className="w-[170px] flex justify-center items-center flex-col gap-1.5">
+          <div className="w-full flex justify-between items-center gap-2">
+            <Label>Auto Send:</Label>
+            <Switch checked={autoSendOn} onCheckedChange={() => setAutoSendOn((curr) => !curr)} />
+          </div>
+          <div className="w-full flex justify-between items-center gap-2">
+            <Label>Auto Read:</Label>
+            <Switch checked={autoReadOn} onCheckedChange={() => setAutoReadOn((curr) => !curr)} />
+          </div>
+          <div className="w-full flex justify-between items-center gap-2">
+            <Label>Auto Listen:</Label>
+            <Switch checked={autoListenOn} onCheckedChange={() => setAutoListenOn((curr) => !curr)} />
+          </div>
         </div>
         <button
           onClick={handleButtonClick}
