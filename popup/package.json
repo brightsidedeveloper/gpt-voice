@@ -28,6 +28,7 @@
     "class-variance-authority": "^0.7.0",
     "cmdk": "^1.0.0",
     "embla-carousel-react": "^8.1.8",
+    "jotai": "^2.9.3",
     "lucide-react": "^0.427.0",
     "npx": "^10.2.2",
     "react": "^18.3.1",

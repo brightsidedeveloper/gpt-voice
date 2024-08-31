@@ -6,11 +6,16 @@ import send, { on } from './api/send'
 import { Button } from './components/ui/shadcn/ui/button'
 import { Label } from './components/ui/shadcn/ui/label'
 import { Switch } from './components/ui/shadcn/ui/switch'
+import { atomWithStorage } from 'jotai/utils'
+import { useAtom } from 'jotai/react'
+
+const autoReadAtom = atomWithStorage('auto-read', false)
+const autoSendAtom = atomWithStorage('auto-send', false)
 
 export default function App() {
   const [isListening, setIsListening] = useState(false)
-  const [autoReadOn, setAutoReadOn] = useState(false)
-  const [autoSendOn, setAutoSendOn] = useState(false)
+  const [autoReadOn, setAutoReadOn] = useAtom(autoReadAtom)
+  const [autoSendOn, setAutoSendOn] = useAtom(autoSendAtom)
 
   const handleButtonClick = async () => {
     send('listen', !isListening)
@@ -21,7 +26,10 @@ export default function App() {
     send('auto-send', autoSendOn)
   }, [autoSendOn])
 
-  const sendMessage = () => send('send', null)
+  const sendMessage = () => {
+    setIsListening(false)
+    send('send', autoReadOn)
+  }
 
   useEffect(() => on('speech-result', (payload) => console.log(payload)), [])
 
@@ -40,6 +48,8 @@ export default function App() {
       on('send', () => {
         wetToast('Sending Prompt', { icon: '📤' })
         send('send', autoReadOn)
+        setIsListening(false)
+        send('listen', false)
       }),
     [autoReadOn]
   )

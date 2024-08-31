@@ -21,13 +21,11 @@ on('auto-send', (autoSend) => {
     autoSendOn = autoSend;
     console.log('Auto-sending:', autoSend);
 });
-on('send', (autoRead) => {
-    autoReadOn = autoRead;
-    console.log('Sending prompt...');
+function send() {
     const button = document.querySelector('button[data-testid="send-button"]');
     if (button)
         button.click();
-    if (!autoRead)
+    if (!autoReadOn)
         return;
     setTimeout(() => {
         const i = setInterval(() => {
@@ -40,13 +38,21 @@ on('send', (autoRead) => {
             }, 100);
         }, 100);
     }, 1500);
+}
+on('send', (autoRead) => {
+    autoReadOn = autoRead;
+    console.log('Sending prompt...');
+    send();
 });
-on('read', () => {
-    console.log('Reading prompt...');
+function read() {
     const btns = Array.from(document.querySelectorAll('button[aria-label="Read Aloud"]'));
     const button = btns[btns.length - 1];
     if (button)
         button.click();
+}
+on('read', () => {
+    console.log('Reading prompt...');
+    read();
 });
 // Check if the browser supports SpeechRecognition
 // @ts-ignore
@@ -61,6 +67,10 @@ if (SpeechRecognition) {
     // Start recognition on button click or another trigger
     const startRecognition = () => {
         recognition.start();
+    };
+    recognition.onend = () => {
+        console.log('Speech recognition stopped, restarting...');
+        startRecognition();
     };
     // Handle recognition results
     // @ts-ignore
@@ -78,9 +88,10 @@ if (SpeechRecognition) {
                 textarea.value = textarea.value.trim() + ' ' + transcript.trim();
                 const event = new Event('input', { bubbles: true });
                 textarea.dispatchEvent(event);
-                setTimeout(() => {
-                    chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn });
-                }, 10);
+                if (autoSendOn)
+                    setTimeout(() => {
+                        chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn });
+                    }, 10);
             }
         }
         else {

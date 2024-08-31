@@ -31,12 +31,10 @@ on('auto-send', (autoSend) => {
   console.log('Auto-sending:', autoSend)
 })
 
-on('send', (autoRead) => {
-  autoReadOn = autoRead
-  console.log('Sending prompt...')
+function send() {
   const button = document.querySelector('button[data-testid="send-button"]') as HTMLButtonElement | null
   if (button) button.click()
-  if (!autoRead) return
+  if (!autoReadOn) return
   setTimeout(() => {
     const i = setInterval(() => {
       const badButton = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
@@ -47,13 +45,23 @@ on('send', (autoRead) => {
       }, 100)
     }, 100)
   }, 1500)
+}
+
+on('send', (autoRead) => {
+  autoReadOn = autoRead
+  console.log('Sending prompt...')
+  send()
 })
 
-on('read', () => {
-  console.log('Reading prompt...')
+function read() {
   const btns = Array.from(document.querySelectorAll('button[aria-label="Read Aloud"]')) as HTMLButtonElement[]
   const button = btns[btns.length - 1]
   if (button) button.click()
+}
+
+on('read', () => {
+  console.log('Reading prompt...')
+  read()
 })
 
 // Check if the browser supports SpeechRecognition
@@ -74,6 +82,11 @@ if (SpeechRecognition) {
     recognition.start()
   }
 
+  recognition.onend = () => {
+    console.log('Speech recognition stopped, restarting...')
+    startRecognition()
+  }
+
   // Handle recognition results
   // @ts-ignore
   recognition.onresult = (event) => {
@@ -92,9 +105,10 @@ if (SpeechRecognition) {
         textarea.value = textarea.value.trim() + ' ' + transcript.trim()
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
-        setTimeout(() => {
-          chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
-        }, 10)
+        if (autoSendOn)
+          setTimeout(() => {
+            chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
+          }, 10)
       }
     } else {
       if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
