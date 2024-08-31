@@ -103,13 +103,19 @@ export default function App() {
     <div className={tw('max-h-[250px] size-full transition-all duration-500', showInstructions ? 'min-w-[550px]' : 'min-w-[280px]')}>
       <header className="h-12 border-b shadow-sm flex items-center justify-center">
         <div className="px-2 flex items-center justify-between w-full [max-width:1920px]">
-          <span className="font-semibold text-xl">GPT Voice Mode</span>
+          <span className="font-semibold text-xl">Real Chat AI</span>
           <div className="w-fit flex items-center gap-3">
             <ThemeToggle />
-            <Avatar className="size-6 rounded-full overflow-hidden">
-              <AvatarImage src="https://github.com/brightsidedeveloper.png" alt="name" />
-              <AvatarFallback>NAME</AvatarFallback>
-            </Avatar>
+            <a
+              href="https://github.com/brightsidedeveloper"
+              target="_blank"
+              className="size-6 rounded-full overflow-hidden border-border shadow-md"
+            >
+              <Avatar>
+                <AvatarImage src="https://github.com/brightsidedeveloper.png" alt="name" />
+                <AvatarFallback>NAME</AvatarFallback>
+              </Avatar>
+            </a>
           </div>
         </div>
       </header>
