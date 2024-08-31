@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "GPT Voice Mode",
+  "version": "1.0",
+  "description": "An extension to enable voice mode in ChatGPT browser version. Created by Tim https://github.com/brightsidedeveloper",
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["injection.js"]
+    }
+  ]
+}
