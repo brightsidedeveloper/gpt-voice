@@ -103,7 +103,7 @@ export default function App() {
     <div className={tw('max-h-[250px] size-full transition-all duration-500', showInstructions ? 'min-w-[550px]' : 'min-w-[280px]')}>
       <header className="h-12 border-b shadow-sm flex items-center justify-center">
         <div className="px-2 flex items-center justify-between w-full [max-width:1920px]">
-          <span className="font-semibold text-xl">Real Chat AI</span>
+          <span className="font-bold text-xl text-primary">VoiceChatAI</span>
           <div className="w-fit flex items-center gap-3">
             <ThemeToggle />
             <a
