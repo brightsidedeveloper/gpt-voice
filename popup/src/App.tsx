@@ -8,6 +8,19 @@ import { Label } from './components/ui/shadcn/ui/label'
 import { Switch } from './components/ui/shadcn/ui/switch'
 import { atomWithStorage } from 'jotai/utils'
 import { useAtom } from 'jotai/react'
+import { BrightBaseRealtime, initBrightBase } from 'bsdweb'
+
+initBrightBase(
+  'https://ybpjdhzaqaogrojgsjxh.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlicGpkaHphcWFvZ3JvamdzanhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDYzNzMyOTYsImV4cCI6MjAyMTk0OTI5Nn0.CWTPdwYlV1g6Zif2dKRfVJHK8xwxNhS8gb9Sg3EY4Dg'
+)
+
+type Events = {
+  'send-files': {
+    files: { path: string; content: string }[]
+  }
+}
+const realtime = new BrightBaseRealtime<Events>('chrome-gpt-fire')
 
 const autoReadAtom = atomWithStorage('auto-read', false)
 const autoSendAtom = atomWithStorage('auto-send', false)
@@ -23,6 +36,9 @@ export default function App() {
     send('listen', !isListening)
     setIsListening(!isListening)
   }
+
+  useEffect(() => realtime.subscribe(), [])
+  useEffect(() => realtime.on('send-files', (payload) => send('send-files', payload)), [])
 
   useEffect(() => {
     send('auto-send', autoSendOn)

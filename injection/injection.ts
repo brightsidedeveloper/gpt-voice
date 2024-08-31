@@ -67,7 +67,7 @@ recognition.onresult = (event) => {
   const transcript = event.results[lastIndex][0].transcript
   console.log('Transcript:', transcript)
   // Send the recognized text to the background or popup
-  const commands = ['send', 'read', 'listen', 'nevermind', 'never mind']
+  const commands = ['send', 'read', 'listen', 'nevermind', 'never mind', 'stop']
   const compoundCommands = [
     ['turn', 'read', 'on'],
     ['turn', 'read', 'off'],
@@ -83,13 +83,7 @@ recognition.onresult = (event) => {
     !compoundCommands.some((compound) => compound.every((part) => transcript.toLowerCase().includes(part)))
   ) {
     chrome.runtime.sendMessage({ event: 'speech-result', payload: transcript })
-    const textarea = document.getElementById('prompt-textarea') as HTMLTextAreaElement | null
-    if (textarea) {
-      textarea.value = textarea.value.trim() + ' ' + transcript.trim()
-      const event = new Event('input', { bubbles: true })
-      textarea.dispatchEvent(event)
-      if (autoSendOn) debouncedSendMessage()
-    }
+    appendTextArea(transcript)
   } else {
     const compound = compoundCommands.find((compound) => compound.every((part) => transcript.toLowerCase().includes(part)))
     if (compound) {
@@ -119,6 +113,11 @@ recognition.onresult = (event) => {
       setTimeout(() => {
         chrome.runtime.sendMessage({ event: 'send', payload: autoReadOn })
       })
+    } else if (transcript.toLowerCase().includes('stop')) {
+      const button = document.querySelector('button[aria-label="Stop streaming"]') as HTMLButtonElement | null
+      const button2 = document.querySelector('button[aria-label="Stop"]') as HTMLButtonElement | null
+      if (button) button.click()
+      if (button2) button2.click()
     }
   }
 }
@@ -197,4 +196,22 @@ let reading = false
 on('read', () => {
   console.log('Reading prompt...')
   read()
+})
+
+function appendTextArea(text: string) {
+  const textarea = document.getElementById('prompt-textarea') as HTMLTextAreaElement | null
+  if (textarea) {
+    textarea.value = textarea.value.trim() + ' ' + text.trim()
+    const event = new Event('input', { bubbles: true })
+    textarea.dispatchEvent(event)
+    if (autoSendOn) debouncedSendMessage()
+  }
+}
+
+on('send-files', (payload: { files: { path: string; content: string }[] }) => {
+  console.log('Received files:', payload.files)
+  payload.files.forEach(({ path, content }) => {
+    appendTextArea('The following code is in this path: ' + path)
+    appendTextArea(content)
+  })
 })

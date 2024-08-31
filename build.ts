@@ -66,4 +66,4 @@ fsExtra.copySync(injectionJsPath, targetInjectionJsPath, { overwrite: true })
 
 // Final Success Message
 logSuccess('WOOOHOOOO! Just load the extension folder into chrome://extensions! 🎉🚀')
-console.log(chalk.blueBright.bold(figlet.textSync('To  Ez', { font: '3D-ASCII', horizontalLayout: 'controlled smushing' })))
+console.log(chalk.blueBright.bold(figlet.textSync('Too  Ez', { font: '3D-ASCII', horizontalLayout: 'controlled smushing' })))
