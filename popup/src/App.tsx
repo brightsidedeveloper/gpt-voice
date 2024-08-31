@@ -30,8 +30,8 @@ export default function App() {
       on('read', () => {
         wetToast('Reading Prompt', { icon: '📖' })
         setIsListening(false)
-        send('read', null)
         send('listen', false)
+        send('read', null)
       }),
     []
   )
@@ -49,6 +49,15 @@ export default function App() {
         wetToast('Listening', { icon: '🎤' })
         send('listen', true)
         setIsListening(true)
+      }),
+    []
+  )
+  useEffect(
+    () =>
+      on('nevermind', () => {
+        wetToast('Nevermind', { icon: '👌' })
+        setIsListening(false)
+        send('listen', false)
       }),
     []
   )

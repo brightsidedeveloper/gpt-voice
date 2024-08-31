@@ -64,7 +64,7 @@ if (SpeechRecognition) {
     const transcript = event.results[lastIndex][0].transcript
     console.log('Transcript:', transcript)
     // Send the recognized text to the background or popup
-    const commands = ['send', 'read', 'GPT']
+    const commands = ['send', 'read', 'GPT', 'nevermind', 'never mind']
 
     if (listening && !commands.some((command) => transcript.toLowerCase().includes(command.toLowerCase()))) {
       chrome.runtime.sendMessage({ event: 'speech-result', payload: transcript })
@@ -75,7 +75,9 @@ if (SpeechRecognition) {
         textarea.dispatchEvent(event)
       }
     } else {
-      if (transcript.toLowerCase().includes('gpt')) {
+      if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
+        chrome.runtime.sendMessage({ event: 'nevermind', payload: null })
+      } else if (transcript.toLowerCase().includes('gpt')) {
         chrome.runtime.sendMessage({ event: 'okay', payload: null })
       } else if (transcript.toLowerCase().includes('read')) {
         setTimeout(() => {
