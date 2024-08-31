@@ -107,7 +107,7 @@ export default function App() {
           <div className="w-fit flex items-center gap-3">
             <ThemeToggle />
             <a
-              href="https://github.com/brightsidedeveloper"
+              href="https://github.com/brightsidedeveloper/gpt-voice"
               target="_blank"
               className="size-6 rounded-full overflow-hidden border-border shadow-md"
             >
