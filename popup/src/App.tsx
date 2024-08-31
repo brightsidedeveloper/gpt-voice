@@ -40,6 +40,7 @@ export default function App() {
       on('send', () => {
         wetToast('Sending Prompt', { icon: '📤' })
         send('send', null)
+        setTranscript('')
       }),
     []
   )
@@ -48,6 +49,7 @@ export default function App() {
       on('okay', () => {
         wetToast('Listening', { icon: '🎤' })
         send('listen', true)
+        setTranscript('...')
         setIsListening(true)
       }),
     []
@@ -56,6 +58,7 @@ export default function App() {
     () =>
       on('nevermind', () => {
         wetToast('Nevermind', { icon: '👌' })
+        setTranscript('')
         setIsListening(false)
         send('listen', false)
       }),

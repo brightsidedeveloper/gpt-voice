@@ -63,6 +63,12 @@ if (SpeechRecognition) {
         else {
             if (transcript.toLowerCase().includes('nevermind') || transcript.toLowerCase().includes('never mind')) {
                 chrome.runtime.sendMessage({ event: 'nevermind', payload: null });
+                const textarea = document.getElementById('prompt-textarea');
+                if (textarea) {
+                    textarea.value = '';
+                    const event = new Event('input', { bubbles: true });
+                    textarea.dispatchEvent(event);
+                }
             }
             else if (transcript.toLowerCase().includes('listen')) {
                 chrome.runtime.sendMessage({ event: 'okay', payload: null });
