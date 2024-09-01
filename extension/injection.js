@@ -192,7 +192,7 @@ function appendTextArea(text) {
 on('send-files', (payload) => {
     console.log('Received files:', payload.files);
     payload.files.forEach(({ path, content }) => {
-        appendTextArea('The following code is in this path: ' + path);
-        appendTextArea(content);
+        appendTextArea('The following file content is in this path `' + path + '`');
+        appendTextArea('```' + content + '```');
     });
 });
