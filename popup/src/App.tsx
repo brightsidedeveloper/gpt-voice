@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar'
 import { ThemeToggle } from './components/ui/ThemeToggle'
 import { tw, wetToast } from 'bsdweb'
@@ -7,6 +7,7 @@ import { Switch } from './components/ui/shadcn/ui/switch'
 import { BrightBaseRealtime, initBrightBase } from 'bsdweb'
 import { useAtom } from 'jotai'
 import content, { contentStateAtom } from './api/Chrome'
+import { Button } from './components/ui/shadcn/ui/button'
 
 initBrightBase(
   'https://ybpjdhzaqaogrojgsjxh.supabase.co',
@@ -21,8 +22,12 @@ const vscode = new BrightBaseRealtime<VSCodeEvents>('vscode')
 export default function App() {
   const [contentState, setContentState] = useAtom(contentStateAtom)
 
+  const onFlipSwitch = useCallback((checked: boolean) => content.emit('UPDATE_STATE', { switch: checked }), [])
+
+  const getState = useCallback(() => content.emit('GET_STATE', {}), [])
+
   useEffect(() => content.on('STATE', setContentState), [setContentState])
-  useEffect(() => content.emit('GET_STATE', {}), [])
+  useEffect(getState, [getState])
 
   useEffect(() => vscode.subscribe(), [])
   useEffect(() => vscode.on('test', ({ message }) => wetToast(message, { icon: '🥳' })), [])
@@ -50,8 +55,9 @@ export default function App() {
       <div className="p-6 w-full flex justify-between items-center gap-4 @container">
         <div className="w-[200px] flex justify-center items-center flex-col gap-3">
           <Label>Switch:</Label>
-          <Switch checked={contentState.switch} onCheckedChange={() => setAutoSendOn((curr) => !curr)} />
+          <Switch checked={contentState.switch} onCheckedChange={onFlipSwitch} />
         </div>
+        <Button onClick={getState}>getState</Button>
       </div>
     </div>
   )
