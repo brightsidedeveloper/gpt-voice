@@ -209,10 +209,30 @@ function appendTextArea(text: string) {
   }
 }
 
-on('send-files', (payload: { files: { path: string; content: string }[] }) => {
-  console.log('Received files:', payload.files)
-  payload.files.forEach(({ path, content }) => {
+on('send-files', ({ files }: { files: { path: string; content: string }[] }) => {
+  console.log('Received files:', files)
+  files.forEach(({ path, content }) => {
     appendTextArea('The following file content is in this path `' + path + '`')
     appendTextArea('```' + content + '```')
   })
+})
+on('send-files-with-query', ({ files, query }: { files: { path: string; content: string }[]; query: string }) => {
+  console.log('Received files:', files)
+  files.forEach(({ path, content }) => {
+    appendTextArea('The following file content is in this path `' + path + '`')
+    appendTextArea('```' + content + '```')
+    appendTextArea(query)
+  })
+  debouncedSendMessage()
+})
+on('send-selection', ({ code }: { code: string }) => {
+  console.log('Received selection:', code)
+  appendTextArea('```' + code + '```')
+})
+on('send-selection-with-query', ({ code, query }: { code: string; query: string }) => {
+  console.log('Received selection:', code, query)
+
+  appendTextArea('```' + code + '```')
+  appendTextArea(query)
+  debouncedSendMessage()
 })

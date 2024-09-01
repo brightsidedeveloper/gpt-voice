@@ -189,10 +189,29 @@ function appendTextArea(text) {
             debouncedSendMessage();
     }
 }
-on('send-files', (payload) => {
-    console.log('Received files:', payload.files);
-    payload.files.forEach(({ path, content }) => {
+on('send-files', ({ files }) => {
+    console.log('Received files:', files);
+    files.forEach(({ path, content }) => {
         appendTextArea('The following file content is in this path `' + path + '`');
         appendTextArea('```' + content + '```');
     });
+});
+on('send-files-with-query', ({ files, query }) => {
+    console.log('Received files:', files);
+    files.forEach(({ path, content }) => {
+        appendTextArea('The following file content is in this path `' + path + '`');
+        appendTextArea('```' + content + '```');
+        appendTextArea(query);
+    });
+    debouncedSendMessage();
+});
+on('send-selection', ({ code }) => {
+    console.log('Received selection:', code);
+    appendTextArea('```' + code + '```');
+});
+on('send-selection-with-query', ({ code, query }) => {
+    console.log('Received selection:', code, query);
+    appendTextArea('```' + code + '```');
+    appendTextArea(query);
+    debouncedSendMessage();
 });

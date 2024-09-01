@@ -18,6 +18,17 @@ type Events = {
   'send-files': {
     files: { path: string; content: string }[]
   }
+  'send-files-with-query': {
+    files: { path: string; content: string }[]
+    query: string
+  }
+  'send-selection': {
+    code: string
+  }
+  'send-selection-with-query': {
+    code: string
+    query: string
+  }
 }
 const realtime = new BrightBaseRealtime<Events>('chrome-gpt-fire')
 
@@ -29,13 +40,53 @@ const showInstructionsAtom = atomWithStorage('show-instructions', false)
 export default function App() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
+  const [receivedFiles, setReceivedFiles] = useState<string | null>(null)
   const [autoSpeakOn, setAutoSpeakOn] = useAtom(autoSpeakAtom)
   const [autoSendOn, setAutoSendOn] = useAtom(autoSendAtom)
   const [autoListenOn, setAutoListenOn] = useAtom(autoListenAtom)
   const [showInstructions, setShowInstructions] = useAtom(showInstructionsAtom)
 
   useEffect(() => realtime.subscribe(), [])
-  useEffect(() => realtime.on('send-files', (payload) => send('send-files', payload)), [])
+  useEffect(
+    () =>
+      realtime.on('send-files', (payload) => {
+        wetToast('Received Files', { icon: '📄' })
+        setReceivedFiles('send-files')
+        send('send-files', payload)
+        setTimeout(() => setReceivedFiles((curr) => (curr === 'send-files' ? null : curr)), 3000)
+      }),
+    []
+  )
+  useEffect(
+    () =>
+      realtime.on('send-files-with-query', (payload) => {
+        wetToast('Received Files with query: ' + payload.query, { icon: '📄' })
+        setReceivedFiles('send-files-with-query')
+        send('send-files-with-query', payload)
+        setTimeout(() => setReceivedFiles((curr) => (curr === 'send-files-with-query' ? null : curr)), 3000)
+      }),
+    []
+  )
+  useEffect(
+    () =>
+      realtime.on('send-selection', (payload) => {
+        wetToast('Received Code', { icon: '📝' })
+        setReceivedFiles('send-selection')
+        send('send-selection', payload)
+        setTimeout(() => setReceivedFiles((curr) => (curr === 'send-selection' ? null : curr)), 3000)
+      }),
+    []
+  )
+  useEffect(
+    () =>
+      realtime.on('send-selection-with-query', (payload) => {
+        wetToast('Received Code with query: ' + payload.query, { icon: '📝' })
+        setReceivedFiles('send-selection-with-query')
+        send('send-selection-with-query', payload)
+        setTimeout(() => setReceivedFiles((curr) => (curr === 'send-selection-with-query' ? null : curr)), 3000)
+      }),
+    []
+  )
 
   useEffect(() => {
     send('auto-send', autoSendOn)
@@ -174,11 +225,17 @@ export default function App() {
       <div className="w-full flex justify-center items-center">
         <p
           className={tw(
-            'text-lg transition-colors',
-            isSpeaking ? 'animate-bounce text-fuchsia-500' : isListening ? 'text-green-500 animate-pulse' : 'text-amber-500'
+            'text-lg transition-all',
+            receivedFiles
+              ? 'text-blue-500 scale-105'
+              : isSpeaking
+              ? 'animate-bounce text-fuchsia-500'
+              : isListening
+              ? 'text-green-500 animate-pulse'
+              : 'text-amber-500'
           )}
         >
-          {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'On Standby'}
+          {receivedFiles ? 'Received Code' : isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'On Standby'}
         </p>
       </div>
       <a
