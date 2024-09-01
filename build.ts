@@ -27,9 +27,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Define the paths
 const popupFolder = join(__dirname, 'popup')
-const injectionFolder = join(__dirname, 'injection')
+const contentFolder = join(__dirname, 'content')
 const distPopupFolder = join(popupFolder, 'dist')
-const distInjectionFolder = join(injectionFolder, 'dist')
+const distContentFolder = join(contentFolder, 'dist')
 const extensionFolder = join(__dirname, 'extension')
 const manifestFilePath = join(__dirname, 'manifest.json')
 const iconFilePath = join(__dirname, 'icon.png')
@@ -54,12 +54,12 @@ execSync('npm run build', { cwd: popupFolder, stdio: 'inherit' })
 logFlashy('Copying files from popup/dist to the extension folder...')
 fsExtra.copySync(distPopupFolder, extensionFolder, { overwrite: true })
 
-// Step 5: Run 'npm run build' in the 'injection' folder
+// Step 5: Run 'npm run build' in the 'content' folder
 logFlashy('Running npm run build in the injection folder...')
-execSync('npm run build', { cwd: injectionFolder, stdio: 'inherit' })
+execSync('npm run build', { cwd: contentFolder, stdio: 'inherit' })
 
 // Step 6: Copy the built 'injection.js' to the 'extension' folder
-const injectionJsPath = join(distInjectionFolder, 'injection.js')
+const injectionJsPath = join(distContentFolder, 'injection.js')
 const targetInjectionJsPath = join(extensionFolder, 'injection.js')
 logFlashy('Copying injection.js to the extension folder...')
 fsExtra.copySync(injectionJsPath, targetInjectionJsPath, { overwrite: true })
