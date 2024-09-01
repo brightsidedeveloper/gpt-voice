@@ -6,7 +6,7 @@ An extension to enable voice mode in the ChatGPT browser version. It allows user
 
 - **Voice Commands**: Use commands like "Send", "Speak", "Listen", "Nevermind", and "Stop" to control ChatGPT.
 - **Auto Modes**: Automatically activate sending, speaking, or listening modes based on user preferences.
-- **Real-time Communication**: Uses a real-time backend (`BrightBaseRealtime`) to synchronize states and actions.
+- **VSCode Extension**: Uses a real-time backend (`BrightBaseRealtime`) to synchronize actions from my [VSCode Extension](https://github.com/brightsidedeveloper/chrome-gpt-fire) that sends file contents to this extension.
 - **User Interface**: A clean and intuitive popup interface with theme toggles and settings.
 
 ## Installation
